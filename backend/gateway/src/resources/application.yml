@@ -1,0 +1,31 @@
+server:
+  port: 8080 # 网关对外统一端口
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      # 跨域配置 (CORS) - 允许前端调用
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*" # 生产环境请改为具体前端域名
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      
+      # 路由规则
+      routes:
+        # 用户/认证服务路由
+        - id: user-service-route
+          # uri: lb://user-service  # 如果有注册中心(Nacos)用这行
+          uri: http://localhost:8081 # 本地开发直连
+          predicates:
+            - Path=/api/auth/**, /api/user/**
+            
+        # 文件/知识库服务路由
+        - id: file-service-route
+          # uri: lb://file-service
+          uri: http://localhost:8082 # 本地开发直连
+          predicates:
+            - Path=/api/file/**
