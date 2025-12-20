@@ -13,6 +13,9 @@ public class QaRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String tenantId;
+
     private String sessionId;
 
     @Column(length = 2000)

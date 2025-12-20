@@ -31,13 +31,14 @@ public class ContextResolutionService {
 
     /**
      * 解析当前问题，将指代词替换为上下文中的实际内容
+     * @param tenantId 租户ID（多租户隔离）
      * @param sessionId 会话ID
      * @param currentQuestion 当前问题
      * @return 解析后的问题（已替换指代词）
      */
-    public String resolveContext(String sessionId, String currentQuestion) {
-        // 获取最近的对话历史
-        List<QaRecord> history = getRecentHistory(sessionId, CONTEXT_WINDOW);
+    public String resolveContext(String tenantId, String sessionId, String currentQuestion) {
+        // 获取最近的对话历史（多租户隔离）
+        List<QaRecord> history = getRecentHistory(tenantId, sessionId, CONTEXT_WINDOW);
         
         if (history.isEmpty()) {
             // 如果没有历史记录，直接返回原问题
@@ -54,13 +55,14 @@ public class ContextResolutionService {
     }
 
     /**
-     * 获取最近的对话历史
+     * 获取最近的对话历史（多租户隔离）
+     * @param tenantId 租户ID
      * @param sessionId 会话ID
      * @param limit 返回的记录数限制
      * @return 按时间倒序排列的对话历史
      */
-    private List<QaRecord> getRecentHistory(String sessionId, int limit) {
-        List<QaRecord> allRecords = qaRecordRepository.findBySessionIdOrderByCreatedAtDesc(sessionId);
+    private List<QaRecord> getRecentHistory(String tenantId, String sessionId, int limit) {
+        List<QaRecord> allRecords = qaRecordRepository.findByTenantIdAndSessionIdOrderByCreatedAtDesc(tenantId, sessionId);
         if (allRecords.size() > limit) {
             return allRecords.subList(0, limit);
         }
@@ -327,12 +329,13 @@ public class ContextResolutionService {
     }
 
     /**
-     * 获取对话上下文（用于调试和展示）
+     * 获取对话上下文（用于调试和展示，多租户隔离）
+     * @param tenantId 租户ID
      * @param sessionId 会话ID
      * @return 上下文信息
      */
-    public Map<String, Object> getContextInfo(String sessionId) {
-        List<QaRecord> history = getRecentHistory(sessionId, CONTEXT_WINDOW);
+    public Map<String, Object> getContextInfo(String tenantId, String sessionId) {
+        List<QaRecord> history = getRecentHistory(tenantId, sessionId, CONTEXT_WINDOW);
         Map<String, Object> contextInfo = new HashMap<>();
         contextInfo.put("historyCount", history.size());
         contextInfo.put("history", history);

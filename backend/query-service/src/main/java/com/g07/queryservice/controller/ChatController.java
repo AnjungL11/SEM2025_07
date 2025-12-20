@@ -1,5 +1,6 @@
 package com.g07.queryservice.controller;
 
+import com.g07.common.util.UserContext;
 import com.g07.queryservice.dto.ChatRequest;
 import com.g07.queryservice.dto.ChatResponse;
 import com.g07.queryservice.entity.QaRecord;
@@ -43,6 +44,12 @@ public class ChatController {
     // 3. 核心问答接口
     @PostMapping("/completions")
     public ChatResponse chat(@RequestBody ChatRequest request) {
+        // 获取租户ID（多租户隔离）
+        String tenantId = UserContext.getTenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            throw new RuntimeException("租户ID不能为空，请先登录");
+        }
+
         // 处理sessionId
         String sessionId = request.getSessionId();
         if (sessionId == null || sessionId.isEmpty()) {
@@ -52,8 +59,8 @@ public class ChatController {
         // 获取原始问题
         String originalQuestion = request.getQuestion();
         
-        // 解析上下文，处理指代词
-        String resolvedQuestion = contextResolutionService.resolveContext(sessionId, originalQuestion);
+        // 解析上下文，处理指代词（传入tenantId进行多租户隔离）
+        String resolvedQuestion = contextResolutionService.resolveContext(tenantId, sessionId, originalQuestion);
         
         // 如果问题被解析修改过，记录原始问题和解析后的问题
         String questionForProcessing = resolvedQuestion;
@@ -72,8 +79,9 @@ public class ChatController {
             answer = "您的问题 \"" + questionForProcessing + "\" 已收到。我正在为您查找相关信息...";
         }
 
-        // 保存到数据库（保存原始问题）
+        // 保存到数据库（保存原始问题，包含tenantId进行多租户隔离）
         QaRecord record = new QaRecord();
+        record.setTenantId(tenantId);
         record.setSessionId(sessionId);
         record.setQuestion(originalQuestion); // 保存原始问题
         record.setAnswer(answer);
@@ -99,14 +107,24 @@ public class ChatController {
     // 4. 获取历史记录
     @GetMapping("/history")
     public List<QaRecord> getHistory(@RequestParam String sessionId) {
-        // 按时间倒序返回历史记录
-        return qaRecordRepository.findBySessionIdOrderByCreatedAtDesc(sessionId);
+        // 获取租户ID（多租户隔离）
+        String tenantId = UserContext.getTenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            throw new RuntimeException("租户ID不能为空，请先登录");
+        }
+        // 按租户ID和会话ID查询，按时间倒序返回历史记录（多租户隔离）
+        return qaRecordRepository.findByTenantIdAndSessionIdOrderByCreatedAtDesc(tenantId, sessionId);
     }
     
     // 6. 获取上下文信息（调试用）
     @GetMapping("/context")
     public Map<String, Object> getContext(@RequestParam String sessionId) {
-        return contextResolutionService.getContextInfo(sessionId);
+        // 获取租户ID（多租户隔离）
+        String tenantId = UserContext.getTenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            throw new RuntimeException("租户ID不能为空，请先登录");
+        }
+        return contextResolutionService.getContextInfo(tenantId, sessionId);
     }
 
     // 5. 简单问答接口（不保存记录）
