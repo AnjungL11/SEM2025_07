@@ -124,5 +124,19 @@ CREATE TABLE `audit_log` (
   PRIMARY KEY (`log_id`),
   KEY `idx_tenant_time` (`tenant_id`, `timestamp`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统审计日志表';
+ALTER TABLE `audit_log` MODIFY COLUMN `operation_detail` VARCHAR(1000) NULL COMMENT '操作详情';
+ALTER TABLE `audit_log` 
+ADD COLUMN `resource_id` VARCHAR(64) DEFAULT NULL COMMENT '关联资源ID(如doc_id)' AFTER `target_resource`;
+ALTER TABLE `audit_log` ADD COLUMN `username` VARCHAR(50) DEFAULT NULL COMMENT '操作人姓名' AFTER `user_id`;
+
+CREATE TABLE `category` (
+  `id` varchar(32) NOT NULL COMMENT '分类ID',
+  `name` varchar(100) NOT NULL COMMENT '文件夹名称',
+  `tenant_id` varchar(32) NOT NULL COMMENT '所属租户',
+  `create_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `document` ADD COLUMN `category_id` varchar(32) DEFAULT NULL COMMENT '所属分类ID';
 
 SET FOREIGN_KEY_CHECKS = 1;
