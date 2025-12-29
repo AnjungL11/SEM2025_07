@@ -33,7 +33,7 @@ npm install vuedraggable@next
 ```powershell
 npm run dev
 ```
-在浏览器输入网址http://localhost:5173进入网页。
+在浏览器输入网址<http://localhost:5173>进入网页。
 
 ## 关于用户角色
 ### 普通用户
